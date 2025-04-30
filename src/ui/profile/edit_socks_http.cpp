@@ -27,6 +27,7 @@ void EditSocksHttp::onStart(std::shared_ptr<NekoGui::ProxyEntity> _ent) {
 
     ui->username->setText(bean->username);
     ui->password->setText(bean->password);
+    ui->password->setEchoMode(QLineEdit::Password);
 }
 
 bool EditSocksHttp::onEnd() {
