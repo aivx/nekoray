@@ -1,7 +1,8 @@
-syntax = "proto3";
+syntax = "proto2";
 
 package libcore;
 option go_package = "grpc_server/gen";
+option optimize_for = LITE_RUNTIME;
 
 service LibcoreService {
   rpc Exit(EmptyReq) returns (EmptyResp);
@@ -11,6 +12,7 @@ service LibcoreService {
   rpc CheckConfig(LoadConfigReq) returns (ErrorResp);
   rpc Test(TestReq) returns (TestResp);
   rpc StopTest(EmptyReq) returns (EmptyResp);
+  rpc QueryURLTest(EmptyReq) returns (QueryURLTestResponse);
   rpc QueryStats(EmptyReq) returns (QueryStatsResp);
   rpc ListConnections(EmptyReq) returns (ListConnectionsResp);
   //
@@ -22,6 +24,9 @@ service LibcoreService {
   rpc SetSystemDNS(SetSystemDNSRequest) returns (EmptyResp);
   //
   rpc IsPrivileged(EmptyReq) returns (IsPrivilegedResponse);
+  //
+  rpc SpeedTest(SpeedTestRequest) returns(SpeedTestResponse);
+  rpc QuerySpeedTest(EmptyReq) returns(QuerySpeedTestResponse);
 }
 
 message EmptyReq {}
@@ -29,27 +34,33 @@ message EmptyReq {}
 message EmptyResp {}
 
 message ErrorResp {
-  string error = 1;
+  optional string error = 1 [default = ""];
 }
 
 message LoadConfigReq {
-  string core_config = 1;
-  bool disable_stats = 2;
+  required string core_config = 1 [default = ""];
+  required bool disable_stats = 2 [default = false];
+  optional bool need_extra_process = 3 [default = false];
+  optional string extra_process_path = 4 [default = ""];
+  optional string extra_process_args = 5 [default = ""];
+  optional string extra_process_conf = 6 [default = ""];
+  optional string extra_process_conf_dir = 7 [default = ""];
+  optional bool extra_no_out = 8 [default = false];
 }
 
 message URLTestResp {
-  string outbound_tag = 1;
-  int32 latency_ms = 2;
-  string error = 3;
+  required string outbound_tag = 1 [default = ""];
+  required int32 latency_ms = 2 [default = 0 ];
+  required string error = 3 [default = ""];
 }
 
 message TestReq {
-  string config = 1;
+  required string config = 1 [default = ""];
   repeated string outbound_tags = 2;
-  bool use_default_outbound = 3;
-  string url = 4;
-  bool test_current = 5;
-  int32 max_concurrency = 6;
+  required bool use_default_outbound = 3 [default = false];
+  required string url = 4 [default = ""];
+  required bool test_current = 5 [default = false];
+  required int32 max_concurrency = 6 [default = 0];
 }
 
 message TestResp {
@@ -66,16 +77,16 @@ message ListConnectionsResp {
 }
 
 message ConnectionMetaData {
-  string id = 1;
-  int64 created_at = 2;
-  int64 upload = 3;
-  int64 download = 4;
-  string outbound = 5;
-  string network = 6;
-  string dest = 7;
-  string protocol = 8;
-  string domain = 9;
-  string process = 10;
+  required string id = 1 [default = ""];
+  required int64 created_at = 2 [default = 0];
+  required int64 upload = 3 [default = 0];
+  required int64 download = 4 [default = 0];
+  required string outbound = 5 [default = ""];
+  required string network = 6 [default = ""];
+  required string dest = 7 [default = ""];
+  required string protocol = 8 [default = ""];
+  required string domain = 9 [default = ""];
+  required string process = 10 [default = ""];
 }
 
 message GetGeoIPListResponse {
@@ -87,23 +98,58 @@ message GetGeoSiteListResponse {
 }
 
 message GeoListRequest {
-  string path = 1;
+  required string path = 1 [default = ""];
 }
 
 message CompileGeoIPToSrsRequest {
-  string item = 1;
-  string path = 2;
+  required string item = 1 [default = ""];
+  required string path = 2 [default = ""];
 }
 
 message CompileGeoSiteToSrsRequest {
-  string item = 1;
-  string path = 2;
+  required string item = 1 [default = ""];
+  required string path = 2 [default = ""];
 }
 
 message SetSystemDNSRequest {
-  bool clear = 1;
+  required bool clear = 1 [default = false];
 }
 
 message IsPrivilegedResponse {
-  bool has_privilege = 1;
+  required bool has_privilege = 1 [default = false];
+}
+
+message SpeedTestRequest {
+  required string config = 1 [default = ""];
+  repeated string outbound_tags = 2;
+  required bool test_current = 3 [default = false];
+  required bool use_default_outbound = 4 [default = false];
+  required bool test_download = 5 [default = false];
+  required bool test_upload = 6 [default = false];
+  required bool simple_download = 7 [default = false];
+  required string simple_download_addr = 8 [default = ""];
+}
+
+message SpeedTestResult {
+  required string dl_speed = 1 [default = ""];
+  required string ul_speed = 2 [default = ""];
+  required int32 latency = 3 [default = 0];
+  required string outbound_tag = 4 [default = ""];
+  required string error = 5 [default = ""];
+  required string server_name = 6 [default = ""];
+  required string server_country = 7 [default = ""];
+  required bool cancelled = 8 [default = false];
+}
+
+message SpeedTestResponse {
+  repeated SpeedTestResult results = 1;
+}
+
+message QuerySpeedTestResponse {
+  required SpeedTestResult result = 1;
+  required bool is_running = 2 [default = false];
+}
+
+message QueryURLTestResponse {
+  repeated URLTestResp results = 1;
 }

@@ -2,7 +2,7 @@
 
 #include <QMessageBox>
 
-ProxyItem::ProxyItem(QWidget *parent, const std::shared_ptr<NekoGui::ProxyEntity> &ent, QListWidgetItem *item)
+ProxyItem::ProxyItem(QWidget *parent, const std::shared_ptr<Configs::ProxyEntity> &ent, QListWidgetItem *item)
     : QWidget(parent), ui(new Ui::ProxyItem) {
     ui->setupUi(this);
     this->setLayoutDirection(Qt::LeftToRight);
@@ -23,7 +23,7 @@ void ProxyItem::refresh_data() {
     ui->name->setText(ent->bean->DisplayName());
     ui->address->setText(ent->bean->DisplayAddress());
     ui->traffic->setText(ent->traffic_data->DisplayTraffic());
-    ui->test_result->setText(ent->DisplayLatency());
+    ui->test_result->setText(ent->DisplayTestResult());
 
     runOnUiThread(
         [=] {

@@ -1,10 +1,10 @@
 #include <QThread>
-#include <core/server/gen/libcore.pb.h>
+#include <libcore.pb.h>
 #include <include/api/gRPC.h>
 #include "include/ui/mainwindow_interface.h"
 #include <include/stats/connections/connectionLister.hpp>
 
-namespace NekoGui_traffic
+namespace Stats
 {
     ConnectionLister* connection_lister = new ConnectionLister();
 
@@ -28,7 +28,7 @@ namespace NekoGui_traffic
             if (stop) return;
             QThread::msleep(1000);
 
-            if (suspend || !NekoGui::dataStore->enable_stats) continue;
+            if (suspend || !Configs::dataStore->enable_stats) continue;
 
             mu.lock();
             update();
@@ -39,7 +39,7 @@ namespace NekoGui_traffic
     void ConnectionLister::update()
     {
         bool ok;
-            libcore::ListConnectionsResp resp = NekoGui_rpc::defaultClient->ListConnections(&ok);
+            libcore::ListConnectionsResp resp = API::defaultClient->ListConnections(&ok);
             if (!ok)
             {
                 return;
@@ -49,20 +49,20 @@ namespace NekoGui_traffic
             QMap<QString, ConnectionMetadata> toAdd;
             QSet<QString> newState;
             QList<ConnectionMetadata> sorted;
-            auto conns = resp.connections();
+            auto conns = resp.connections;
             for (auto conn : conns)
             {
                 auto c = ConnectionMetadata();
-                c.id = QString(conn.mutable_id()->c_str());
-                c.createdAtMs = conn.created_at();
-                c.dest = QString(conn.mutable_dest()->c_str());
-                c.upload = conn.upload();
-                c.download = conn.download();
-                c.domain = QString(conn.mutable_domain()->c_str());
-                c.network = QString(conn.mutable_network()->c_str());
-                c.outbound = QString(conn.mutable_outbound()->c_str());
-                c.process = QString(conn.mutable_process()->c_str());
-                c.protocol = QString(conn.mutable_protocol()->c_str());
+                c.id = QString(conn.id.c_str());
+                c.createdAtMs = conn.created_at;
+                c.dest = QString(conn.dest.c_str());
+                c.upload = conn.upload;
+                c.download = conn.download;
+                c.domain = QString(conn.domain.c_str());
+                c.network = QString(conn.network.c_str());
+                c.outbound = QString(conn.outbound.c_str());
+                c.process = QString(conn.process.c_str());
+                c.protocol = QString(conn.protocol.c_str());
                 if (sort == Default)
                 {
                     if (state->contains(c.id))
@@ -128,6 +128,34 @@ namespace NekoGui_traffic
 
     void ConnectionLister::setSort(const ConnectionSort newSort)
     {
+        if (newSort == ByTraffic)
+        {
+            if (sort == ByDownload && asc)
+            {
+                sort = ByUpload;
+                asc = false;
+                return;
+            }
+            if (sort == ByUpload && asc)
+            {
+                sort = ByDownload;
+                asc = false;
+                return;
+            }
+            if (sort == ByDownload)
+            {
+                asc = true;
+                return;
+            }
+            if (sort == ByUpload)
+            {
+                asc = true;
+                return;
+            }
+            sort = ByDownload;
+            asc = false;
+            return;
+        }
         if (sort == newSort) asc = !asc;
         else
         {

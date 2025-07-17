@@ -1,13 +1,15 @@
 #pragma once
 
-#include "core/server/gen/libcore.pb.h"
+#ifndef Q_MOC_RUN
+#include "libcore.pb.h"
+#endif
 #include <QString>
 
 namespace QtGrpc {
     class Http2GrpcChannelPrivate;
 }
 
-namespace NekoGui_rpc {
+namespace API {
     enum GeoRuleSetType {ip, site};
 
     class Client {
@@ -28,6 +30,8 @@ namespace NekoGui_rpc {
 
         void StopTests(bool *rpcOK);
 
+        libcore::QueryURLTestResponse QueryURLTest(bool *rpcOK);
+
         QStringList GetGeoList(bool *rpcOK, GeoRuleSetType mode, const QString& basePath);
 
         QString CompileGeoSet(bool *rpcOK, GeoRuleSetType mode, std::string category, const QString& basePath);
@@ -40,6 +44,10 @@ namespace NekoGui_rpc {
 
         bool IsPrivileged(bool *rpcOK) const;
 
+        libcore::SpeedTestResponse SpeedTest(bool *rpcOK, const libcore::SpeedTestRequest &request);
+
+        libcore::QuerySpeedTestResponse QueryCurrentSpeedTests(bool *rpcOK);
+
     private:
         std::function<std::unique_ptr<QtGrpc::Http2GrpcChannelPrivate>()> make_grpc_channel;
         std::unique_ptr<QtGrpc::Http2GrpcChannelPrivate> default_grpc_channel;
@@ -47,4 +55,4 @@ namespace NekoGui_rpc {
     };
 
     inline Client *defaultClient;
-} // namespace NekoGui_rpc
+} // namespace API

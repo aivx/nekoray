@@ -1,8 +1,12 @@
 #pragma once
 
 #include <QMainWindow>
+#include <include/global/HTTPRequestHelper.hpp>
+#ifndef Q_MOC_RUN
+#include <libcore.pb.h>
+#endif
 
-#include "include/global/NekoGui.hpp"
+#include "include/global/Configs.hpp"
 #include "include/stats/connections/connectionLister.hpp"
 #include "3rdparty/qv2ray/v2/ui/widgets/speedchart/SpeedWidget.hpp"
 #ifdef Q_OS_LINUX
@@ -30,7 +34,7 @@
 
 #endif
 
-namespace NekoGui_sys {
+namespace Configs_sys {
     class CoreProcess;
 }
 
@@ -60,15 +64,15 @@ public:
 
     void update_traffic_graph(int proxyDl, int proxyUp, int directDl, int directUp);
 
-    void neko_start(int _id = -1);
+    void profile_start(int _id = -1);
 
-    void neko_stop(bool crash = false, bool sem = false, bool manual = false);
+    void profile_stop(bool crash = false, bool sem = false, bool manual = false);
 
-    void neko_set_spmode_system_proxy(bool enable, bool save = true);
+    void set_spmode_system_proxy(bool enable, bool save = true);
 
-    void neko_toggle_system_proxy();
+    void toggle_system_proxy();
 
-    void neko_set_spmode_vpn(bool enable, bool save = true);
+    void set_spmode_vpn(bool enable, bool save = true);
 
     bool get_elevated_permissions(int reason = 3);
 
@@ -82,9 +86,13 @@ public:
 
     void DownloadAssets(const QString &geoipUrl, const QString &geositeUrl);
 
-    void UpdateConnectionList(const QMap<QString, NekoGui_traffic::ConnectionMetadata>& toUpdate, const QMap<QString, NekoGui_traffic::ConnectionMetadata>& toAdd);
+    void UpdateConnectionList(const QMap<QString, Stats::ConnectionMetadata>& toUpdate, const QMap<QString, Stats::ConnectionMetadata>& toAdd);
 
-    void UpdateConnectionListWithRecreate(const QList<NekoGui_traffic::ConnectionMetadata>& connections);
+    void UpdateConnectionListWithRecreate(const QList<Stats::ConnectionMetadata>& connections);
+
+    void UpdateDataView(bool force = false);
+
+    void setDownloadReport(const DownloadProgressReport& report, bool show);
 
 signals:
 
@@ -166,7 +174,7 @@ private:
     std::atomic<bool> stopSpeedtest = false;
     QMutex speedtestRunning;
     //
-    NekoGui_sys::CoreProcess *core_process;
+    Configs_sys::CoreProcess *core_process;
     qint64 vpn_pid = 0;
     //
     bool qvLogAutoScoll = true;
@@ -174,7 +182,7 @@ private:
     //
     QString title_error;
     int icon_status = -1;
-    std::shared_ptr<NekoGui::ProxyEntity> running;
+    std::shared_ptr<Configs::ProxyEntity> running;
     QString traffic_update_cache;
     QTime last_test_time;
     //
@@ -192,10 +200,18 @@ private:
     int toolTipID;
     //
     SpeedWidget *speedChartWidget;
+    //
+    // for data view
+    QDateTime lastUpdated = QDateTime::currentDateTime();
+    QString currentSptProfileName;
+    bool showSpeedtestData = false;
+    bool showDownloadData = false;
+    libcore::SpeedTestResult currentTestResult;
+    DownloadProgressReport currentDownloadReport; // could use a list, but don't think can show more than one anyways
 
-    QList<std::shared_ptr<NekoGui::ProxyEntity>> get_now_selected_list();
+    QList<std::shared_ptr<Configs::ProxyEntity>> get_now_selected_list();
 
-    QList<std::shared_ptr<NekoGui::ProxyEntity>> get_selected_or_group();
+    QList<std::shared_ptr<Configs::ProxyEntity>> get_selected_or_group();
 
     void dialog_message_impl(const QString &sender, const QString &info);
 
@@ -203,7 +219,7 @@ private:
 
     void refresh_proxy_list_impl_refresh_data(const int &id = -1, bool stopping = false);
 
-    void refresh_table_item(int row, const std::shared_ptr<NekoGui::ProxyEntity>& profile, bool stopping);
+    void refresh_table_item(int row, const std::shared_ptr<Configs::ProxyEntity>& profile, bool stopping);
 
     void keyPressEvent(QKeyEvent *event) override;
 
@@ -219,15 +235,17 @@ private:
 
     static void setup_grpc();
 
-    void speedtest_current_group(const QList<std::shared_ptr<NekoGui::ProxyEntity>>& profiles);
+    void urltest_current_group(const QList<std::shared_ptr<Configs::ProxyEntity>>& profiles);
 
-    void stopSpeedTests();
+    void stopTests();
 
-    void RunSpeedTest(const QString& config, bool useDefault, const QStringList& outboundTags, const QMap<QString, int>& tag2entID, int entID = -1);
+    void runURLTest(const QString& config, bool useDefault, const QStringList& outboundTags, const QMap<QString, int>& tag2entID, int entID = -1);
 
     void url_test_current();
 
-    static void stop_core_daemon();
+    void speedtest_current_group(const QList<std::shared_ptr<Configs::ProxyEntity>>& profiles, bool testCurrent = false);
+
+    void runSpeedTest(const QString& config, bool useDefault, bool testCurrent, const QStringList& outboundTags, const QMap<QString, int>& tag2entID, int entID = -1);
 
     bool set_system_dns(bool set, bool save_set = true);
 
